@@ -15,6 +15,77 @@ body {
   flex-direction: column;
 }
 
+/* --- 비밀번호 화면 --- */
+#authOverlay {
+  position: fixed;
+  inset: 0;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.auth-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  width: 320px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.auth-box h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.auth-box p {
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+}
+
+.auth-box input[type="password"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+}
+
+.auth-box input[type="password"]:focus {
+  border-color: #4a90d9;
+}
+
+.auth-box button {
+  width: 100%;
+  padding: 11px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-box button:disabled {
+  background: #a0c4e8;
+  cursor: default;
+}
+
+.auth-error {
+  font-size: 13px;
+  color: #e05c5c;
+  min-height: 18px;
+}
+
 header {
   background: #4a90d9;
   color: #fff;
@@ -157,6 +228,17 @@ header {
 </head>
 <body>
 
+<!-- 비밀번호 입력 화면 -->
+<div id="authOverlay">
+  <div class="auth-box">
+    <h2>🔒 한국어 쓰기 피드백</h2>
+    <p>접근하려면 암호를 입력하세요.</p>
+    <input type="password" id="passwordInput" placeholder="암호 입력" autocomplete="current-password">
+    <div class="auth-error" id="authError"></div>
+    <button id="authBtn">확인</button>
+  </div>
+</div>
+
 <header>한국어 쓰기 피드백</header>
 
 <div class="topic-bar">
@@ -174,6 +256,54 @@ header {
 </div>
 
 <script>
+// --- 인증 ---
+const authOverlay = document.getElementById("authOverlay");
+const passwordInput = document.getElementById("passwordInput");
+const authBtn = document.getElementById("authBtn");
+const authError = document.getElementById("authError");
+
+let authToken = sessionStorage.getItem("auth_token") || "";
+
+async function tryLogin() {
+  const pw = passwordInput.value;
+  if (!pw) return;
+  authBtn.disabled = true;
+  authError.textContent = "";
+  try {
+    const res = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      authToken = data.token;
+      sessionStorage.setItem("auth_token", authToken);
+      authOverlay.style.display = "none";
+    } else {
+      const err = await res.json().catch(() => ({}));
+      authError.textContent = err.detail || "암호가 올바르지 않습니다.";
+      passwordInput.value = "";
+      passwordInput.focus();
+    }
+  } catch {
+    authError.textContent = "서버에 연결할 수 없습니다.";
+  }
+  authBtn.disabled = false;
+}
+
+authBtn.addEventListener("click", tryLogin);
+passwordInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") tryLogin();
+});
+
+// sessionStorage에 토큰이 있으면 overlay 숨김
+// (토큰이 만료됐을 경우 첫 /api/chat 요청의 401 핸들러가 다시 표시함)
+if (authToken) {
+  authOverlay.style.display = "none";
+}
+
+// --- 채팅 ---
 const chatArea = document.getElementById("chatArea");
 const userInput = document.getElementById("userInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -237,7 +367,10 @@ async function send() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authToken
+      },
       body: JSON.stringify({
         learner_text: text,
         task_topic: topicInput.value.trim()
@@ -245,6 +378,16 @@ async function send() {
     });
 
     hideTyping();
+
+    if (res.status === 401) {
+      sessionStorage.removeItem("auth_token");
+      authToken = "";
+      authError.textContent = "";
+      passwordInput.value = "";
+      authOverlay.style.display = "flex";
+      sendBtn.disabled = false;
+      return;
+    }
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

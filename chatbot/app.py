@@ -1,13 +1,21 @@
 import json
 import os
+import secrets
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
+
+# --- Auth setup ---
+APP_PASSWORD = os.environ.get("APP_PASSWORD")
+if not APP_PASSWORD:
+    print("WARNING: APP_PASSWORD not set. Authentication is disabled.")
+valid_tokens: set[str] = set()
+
 
 # --- Gemini setup ---
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -39,6 +47,14 @@ static_dir = Path(__file__).resolve().parent / "static"
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
+class AuthRequest(BaseModel):
+    password: str
+
+
+class AuthResponse(BaseModel):
+    token: str
+
+
 class ChatRequest(BaseModel):
     learner_text: str
     task_topic: str = ""
@@ -48,13 +64,38 @@ class ChatResponse(BaseModel):
     feedback: str
 
 
+def require_auth(authorization: str | None):
+    """토큰 검증. APP_PASSWORD 미설정 시 인증 생략."""
+    if not APP_PASSWORD:
+        return
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="인증이 필요합니다.")
+    token = authorization.removeprefix("Bearer ")
+    if token not in valid_tokens:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+
+
 @app.get("/")
 async def index():
     return FileResponse(str(static_dir / "index.html"))
 
 
+@app.post("/api/auth", response_model=AuthResponse)
+async def auth(req: AuthRequest):
+    if not APP_PASSWORD:
+        token = secrets.token_urlsafe(32)
+        valid_tokens.add(token)
+        return AuthResponse(token=token)
+    if not secrets.compare_digest(req.password, APP_PASSWORD):
+        raise HTTPException(status_code=401, detail="암호가 틀렸습니다.")
+    token = secrets.token_urlsafe(32)
+    valid_tokens.add(token)
+    return AuthResponse(token=token)
+
+
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
+async def chat(req: ChatRequest, authorization: str | None = Header(default=None)):
+    require_auth(authorization)
     if not client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY가 설정되지 않았습니다.")
 
