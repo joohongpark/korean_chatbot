@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한국어 쓰기 피드백</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f0f2f5;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: #4a90d9;
+  color: #fff;
+  text-align: center;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.topic-bar {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.topic-toggle {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+}
+
+.topic-toggle:hover { background: #fafafa; }
+
+.topic-input-wrap {
+  display: none;
+  padding: 0 16px 10px;
+}
+
+.topic-input-wrap.open { display: block; }
+
+.topic-input-wrap input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.msg {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.msg.user {
+  align-self: flex-end;
+  background: #4a90d9;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.msg.bot {
+  align-self: flex-start;
+  background: #fff;
+  color: #222;
+  border: 1px solid #e0e0e0;
+  border-bottom-left-radius: 4px;
+}
+
+.typing {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-size: 14px;
+  color: #888;
+}
+
+.typing span {
+  animation: blink 1.4s infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+
+.input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.input-bar textarea {
+  flex: 1;
+  resize: none;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.4;
+  min-height: 44px;
+  max-height: 120px;
+}
+
+.input-bar button {
+  padding: 0 20px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.input-bar button:disabled {
+  background: #a0c4e8;
+  cursor: default;
+}
+</style>
+</head>
+<body>
+
+<header>한국어 쓰기 피드백</header>
+
+<div class="topic-bar">
+  <button class="topic-toggle" id="topicToggle">📝 과제 주제 설정 ▸</button>
+  <div class="topic-input-wrap" id="topicWrap">
+    <input type="text" id="topicInput" placeholder="예: 자기소개, 주말 계획, 좋아하는 음식">
+  </div>
+</div>
+
+<div class="chat-area" id="chatArea"></div>
+
+<div class="input-bar">
+  <textarea id="userInput" rows="1" placeholder="한국어로 문장을 써 보세요"></textarea>
+  <button id="sendBtn">전송</button>
+</div>
+
+<script>
+const chatArea = document.getElementById("chatArea");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const topicToggle = document.getElementById("topicToggle");
+const topicWrap = document.getElementById("topicWrap");
+const topicInput = document.getElementById("topicInput");
+
+topicToggle.addEventListener("click", () => {
+  const open = topicWrap.classList.toggle("open");
+  topicToggle.textContent = open ? "📝 과제 주제 설정 ▾" : "📝 과제 주제 설정 ▸";
+  if (open) topicInput.focus();
+});
+
+userInput.addEventListener("input", () => {
+  userInput.style.height = "auto";
+  userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
+});
+
+userInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+
+sendBtn.addEventListener("click", send);
+
+function addMsg(text, cls) {
+  const div = document.createElement("div");
+  div.className = "msg " + cls;
+  div.textContent = text;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const div = document.createElement("div");
+  div.className = "typing";
+  div.id = "typing";
+  div.innerHTML = "<span>●</span> <span>●</span> <span>●</span>";
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById("typing");
+  if (el) el.remove();
+}
+
+async function send() {
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  addMsg(text, "user");
+  userInput.value = "";
+  userInput.style.height = "auto";
+  sendBtn.disabled = true;
+  showTyping();
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        learner_text: text,
+        task_topic: topicInput.value.trim()
+      })
+    });
+
+    hideTyping();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      addMsg("오류: " + (err.detail || res.statusText), "bot");
+    } else {
+      const data = await res.json();
+      addMsg(data.feedback, "bot");
+    }
+  } catch (e) {
+    hideTyping();
+    addMsg("서버에 연결할 수 없습니다.", "bot");
+  }
+
+  sendBtn.disabled = false;
+  userInput.focus();
+}
+</script>
+
+</body>
+</html>
