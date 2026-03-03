@@ -1,7 +1,10 @@
 import json
 import os
 import secrets
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +12,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from google import genai
 from google.genai import types
+
+from rag import get_rag_examples
 
 # --- Auth setup ---
 APP_PASSWORD = os.environ.get("APP_PASSWORD")
@@ -99,10 +104,12 @@ async def chat(req: ChatRequest, authorization: str | None = Header(default=None
     if not client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY가 설정되지 않았습니다.")
 
+    rag_examples = get_rag_examples(req.learner_text)
+
     user_message = (
         user_template
         .replace("{{learner_text}}", req.learner_text)
-        .replace("{{rag_examples}}", "")
+        .replace("{{rag_examples}}", rag_examples)
         .replace("{{task_topic}}", req.task_topic or "(없음)")
     )
 
