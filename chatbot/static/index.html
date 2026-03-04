@@ -13,6 +13,7 @@ body {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* --- 비밀번호 화면 --- */
@@ -84,6 +85,137 @@ body {
   font-size: 13px;
   color: #e05c5c;
   min-height: 18px;
+}
+
+/* --- 전체 레이아웃 --- */
+.app-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* --- 사이드바 --- */
+.sidebar {
+  width: 220px;
+  background: #1e2535;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px 12px 10px;
+  border-bottom: 1px solid #2d3548;
+}
+
+.sidebar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #9ba8c0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.new-chat-btn:hover { background: #3a7bbf; }
+
+.new-chat-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.conv-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.conv-list::-webkit-scrollbar { width: 4px; }
+.conv-list::-webkit-scrollbar-track { background: transparent; }
+.conv-list::-webkit-scrollbar-thumb { background: #3a4256; border-radius: 2px; }
+
+.conv-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 1px 6px;
+  transition: background 0.12s;
+  group: true;
+}
+
+.conv-item:hover { background: #2d3548; }
+.conv-item.active { background: #2d3548; }
+.conv-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: #4a90d9;
+  border-radius: 0 2px 2px 0;
+}
+
+.conv-title {
+  flex: 1;
+  font-size: 13px;
+  color: #c8d0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.conv-item.active .conv-title { color: #fff; }
+
+.conv-del-btn {
+  display: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7a99;
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.conv-item:hover .conv-del-btn { display: flex; }
+.conv-del-btn:hover { color: #e05c5c; background: rgba(224,92,92,0.12); }
+
+/* --- 메인 콘텐츠 --- */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
 }
 
 header {
@@ -224,6 +356,11 @@ header {
   background: #a0c4e8;
   cursor: default;
 }
+
+/* --- 반응형: 모바일에서 사이드바 숨김 --- */
+@media (max-width: 600px) {
+  .sidebar { display: none; }
+}
 </style>
 </head>
 <body>
@@ -239,20 +376,39 @@ header {
   </div>
 </div>
 
-<header>한국어 쓰기 피드백</header>
+<div class="app-layout">
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">대화 목록</div>
+      <button class="new-chat-btn" id="newChatBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        새 대화
+      </button>
+    </div>
+    <div class="conv-list" id="convList"></div>
+  </aside>
 
-<div class="topic-bar">
-  <button class="topic-toggle" id="topicToggle">📝 과제 주제 설정 ▸</button>
-  <div class="topic-input-wrap" id="topicWrap">
-    <input type="text" id="topicInput" placeholder="예: 자기소개, 주말 계획, 좋아하는 음식">
+  <!-- 메인 콘텐츠 -->
+  <div class="main-content">
+    <header>한국어 쓰기 피드백</header>
+
+    <div class="topic-bar">
+      <button class="topic-toggle" id="topicToggle">📝 과제 주제 설정 ▸</button>
+      <div class="topic-input-wrap" id="topicWrap">
+        <input type="text" id="topicInput" placeholder="예: 자기소개, 주말 계획, 좋아하는 음식">
+      </div>
+    </div>
+
+    <div class="chat-area" id="chatArea"></div>
+
+    <div class="input-bar">
+      <textarea id="userInput" rows="1" placeholder="한국어로 문장을 써 보세요"></textarea>
+      <button id="sendBtn">전송</button>
+    </div>
   </div>
-</div>
-
-<div class="chat-area" id="chatArea"></div>
-
-<div class="input-bar">
-  <textarea id="userInput" rows="1" placeholder="한국어로 문장을 써 보세요"></textarea>
-  <button id="sendBtn">전송</button>
 </div>
 
 <script>
@@ -280,6 +436,7 @@ async function tryLogin() {
       authToken = data.token;
       sessionStorage.setItem("auth_token", authToken);
       authOverlay.style.display = "none";
+      await loadConversations();
     } else {
       const err = await res.json().catch(() => ({}));
       authError.textContent = err.detail || "암호가 올바르지 않습니다.";
@@ -297,10 +454,122 @@ passwordInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") tryLogin();
 });
 
-// sessionStorage에 토큰이 있으면 overlay 숨김
-// (토큰이 만료됐을 경우 첫 /api/chat 요청의 401 핸들러가 다시 표시함)
 if (authToken) {
   authOverlay.style.display = "none";
+  loadConversations();
+}
+
+// --- 대화 상태 ---
+let currentConvId = null;
+
+// --- 사이드바 ---
+const convList = document.getElementById("convList");
+const newChatBtn = document.getElementById("newChatBtn");
+
+function authHeaders() {
+  return { "Content-Type": "application/json", "Authorization": "Bearer " + authToken };
+}
+
+async function loadConversations() {
+  try {
+    const res = await fetch("/api/conversations", { headers: authHeaders() });
+    if (res.status === 401) { showAuth(); return; }
+    if (!res.ok) return;
+    const convs = await res.json();
+    renderConvList(convs);
+  } catch { /* 무시 */ }
+}
+
+function renderConvList(convs) {
+  convList.innerHTML = "";
+  convs.forEach(c => {
+    const item = document.createElement("div");
+    item.className = "conv-item" + (c.id === currentConvId ? " active" : "");
+    item.dataset.id = c.id;
+
+    const title = document.createElement("span");
+    title.className = "conv-title";
+    title.textContent = c.title;
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "conv-del-btn";
+    delBtn.title = "삭제";
+    delBtn.innerHTML = "✕";
+    delBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await deleteConversation(c.id);
+    });
+
+    item.appendChild(title);
+    item.appendChild(delBtn);
+    item.addEventListener("click", () => switchConversation(c.id));
+    convList.appendChild(item);
+  });
+}
+
+async function switchConversation(cid) {
+  try {
+    const res = await fetch(`/api/conversations/${cid}`, { headers: authHeaders() });
+    if (res.status === 401) { showAuth(); return; }
+    if (!res.ok) return;
+    const conv = await res.json();
+    currentConvId = cid;
+    renderChatFromHistory(conv.turns);
+    updateActiveItem(cid);
+  } catch { /* 무시 */ }
+}
+
+function renderChatFromHistory(turns) {
+  chatArea.innerHTML = "";
+  turns.forEach(t => {
+    // turns에는 role: "user"/"model", text가 저장됨
+    // user turn의 text는 템플릿 적용된 전체 프롬프트이므로 learner_text 부분만 표시하기 어려움
+    // 대신 role 기준으로 user=user, model=bot으로 표시
+    if (t.role === "user") {
+      // 원문 추출: "원문:\n" 이후 "\n\n" 이전 부분
+      const match = t.text.match(/^원문:\n([\s\S]*?)\n\n/);
+      const display = match ? match[1] : t.text;
+      addMsg(display, "user");
+    } else {
+      addMsg(t.text, "bot");
+    }
+  });
+}
+
+function updateActiveItem(cid) {
+  document.querySelectorAll(".conv-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.id === cid);
+  });
+}
+
+async function deleteConversation(cid) {
+  try {
+    const res = await fetch(`/api/conversations/${cid}`, {
+      method: "DELETE",
+      headers: authHeaders()
+    });
+    if (res.status === 401) { showAuth(); return; }
+    if (cid === currentConvId) {
+      currentConvId = null;
+      chatArea.innerHTML = "";
+    }
+    await loadConversations();
+  } catch { /* 무시 */ }
+}
+
+newChatBtn.addEventListener("click", () => {
+  currentConvId = null;
+  chatArea.innerHTML = "";
+  updateActiveItem(null);
+  userInput.focus();
+});
+
+function showAuth() {
+  sessionStorage.removeItem("auth_token");
+  authToken = "";
+  authError.textContent = "";
+  passwordInput.value = "";
+  authOverlay.style.display = "flex";
 }
 
 // --- 채팅 ---
@@ -322,8 +591,12 @@ userInput.addEventListener("input", () => {
   userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
 });
 
+let isComposing = false;
+userInput.addEventListener("compositionstart", () => { isComposing = true; });
+userInput.addEventListener("compositionend", () => { isComposing = false; });
+
 userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
+  if (e.key === "Enter" && !e.shiftKey && !isComposing) {
     e.preventDefault();
     send();
   }
@@ -367,24 +640,18 @@ async function send() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + authToken
-      },
+      headers: authHeaders(),
       body: JSON.stringify({
         learner_text: text,
-        task_topic: topicInput.value.trim()
+        task_topic: topicInput.value.trim(),
+        conversation_id: currentConvId
       })
     });
 
     hideTyping();
 
     if (res.status === 401) {
-      sessionStorage.removeItem("auth_token");
-      authToken = "";
-      authError.textContent = "";
-      passwordInput.value = "";
-      authOverlay.style.display = "flex";
+      showAuth();
       sendBtn.disabled = false;
       return;
     }
@@ -395,6 +662,12 @@ async function send() {
     } else {
       const data = await res.json();
       addMsg(data.feedback, "bot");
+      // 새 대화인 경우 conversation_id 수신 후 사이드바 갱신
+      if (currentConvId !== data.conversation_id) {
+        currentConvId = data.conversation_id;
+      }
+      await loadConversations();
+      updateActiveItem(currentConvId);
     }
   } catch (e) {
     hideTyping();
