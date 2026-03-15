@@ -299,6 +299,22 @@ header {
   border-bottom-left-radius: 4px;
 }
 
+.msg.bot { white-space: normal; }
+.msg.bot strong { font-weight: 700; }
+.msg.bot em { font-style: italic; }
+.msg.bot code {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: monospace;
+  font-size: 0.92em;
+}
+.msg.bot ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.msg.bot li { margin: 2px 0; }
+
 .typing {
   align-self: flex-start;
   background: #fff;
@@ -617,10 +633,43 @@ userInput.addEventListener("keydown", (e) => {
 
 sendBtn.addEventListener("click", send);
 
+function mdToHtml(text) {
+  // 1) HTML 이스케이프 (XSS 방지)
+  let s = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+  // 2) 인라인 변환 (순서 중요: code 먼저)
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+  // 3) 블록 변환: 연속된 "- " 줄 → <ul><li>
+  s = s.replace(/((?:^|\n)- .+)+/g, (block) => {
+    const items = block.trim().split("\n").map(line =>
+      "<li>" + line.replace(/^- /, "") + "</li>"
+    ).join("");
+    return "\n<ul>" + items + "</ul>\n";
+  });
+
+  // 4) 나머지 줄바꿈 → <br> (단, <ul> 앞뒤 \n은 제거)
+  s = s.replace(/\n/g, "<br>");
+  s = s.replace(/<br>(<ul>)/g, "$1");
+  s = s.replace(/(<\/ul>)<br>/g, "$1");
+
+  return s;
+}
+
 function addMsg(text, cls) {
   const div = document.createElement("div");
   div.className = "msg " + cls;
-  div.textContent = text;
+  if (cls === "bot") {
+    div.innerHTML = mdToHtml(text);
+  } else {
+    div.textContent = text;
+  }
   chatArea.appendChild(div);
   chatArea.scrollTop = chatArea.scrollHeight;
   return div;

@@ -237,6 +237,24 @@ body {
 
 .turn-body { padding: 10px 12px; background: #fff; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 
+.turn.model .turn-body strong { font-weight: 700; }
+.turn.model .turn-body em { font-style: italic; }
+.turn.model .turn-body code {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: monospace;
+  font-size: 0.92em;
+}
+.turn.model .turn-body {
+  white-space: normal;
+}
+.turn.model .turn-body ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.turn.model .turn-body li { margin: 2px 0; }
+
 .rag-toggle {
   display: inline-block;
   margin-top: 6px;
@@ -577,7 +595,7 @@ function renderTurns(container, turns) {
 
       bodyHtml += `</div>`;
     } else {
-      bodyHtml = `<div class="turn-body">${escHtml(t.text)}</div>`;
+      bodyHtml = `<div class="turn-body">${mdToHtml(t.text)}</div>`;
     }
 
     div.innerHTML = `<div class="turn-header">${roleLabel}</div>${bodyHtml}`;
@@ -591,6 +609,35 @@ function toggleEl(id, btn, labelOpen, labelClose) {
   const isHidden = el.style.display !== "block";
   el.style.display = isHidden ? "block" : "none";
   btn.textContent = isHidden ? labelClose : labelOpen;
+}
+
+function mdToHtml(text) {
+  // 1) HTML 이스케이프 (XSS 방지)
+  let s = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+  // 2) 인라인 변환 (순서 중요: code 먼저)
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+  // 3) 블록 변환: 연속된 "- " 줄 → <ul><li>
+  s = s.replace(/((?:^|\n)- .+)+/g, (block) => {
+    const items = block.trim().split("\n").map(line =>
+      "<li>" + line.replace(/^- /, "") + "</li>"
+    ).join("");
+    return "\n<ul>" + items + "</ul>\n";
+  });
+
+  // 4) 나머지 줄바꿈 → <br> (단, <ul> 앞뒤 \n은 제거)
+  s = s.replace(/\n/g, "<br>");
+  s = s.replace(/<br>(<ul>)/g, "$1");
+  s = s.replace(/(<\/ul>)<br>/g, "$1");
+
+  return s;
 }
 
 function escHtml(str) {
