@@ -1,0 +1,96 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Safari/605.1.15" version="29.6.0">
+  <diagram name="페이지-1" id="zrKZcoll_D6rmrrpakOi">
+    <mxGraphModel dx="700" dy="528" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;" value="사용자 (웹 브라우저)&#xa;&#xa;로그인 → 한국어 문장 입력&#xa;+ (선택) 과제 주제" vertex="1">
+          <mxGeometry height="80" width="300" x="183" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rag" parent="1" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;" value="유사 오류 검색" vertex="1">
+          <mxGeometry height="455" width="270" x="10" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="c1" parent="rag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="① 키워드 검색&#xa;&#xa;단어가 일치하는&#xa;사례 탐색&#xa;(최대 10건)" vertex="1">
+          <mxGeometry height="90" width="115" x="10" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" parent="rag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="② 의미 검색&#xa;&#xa;문장을 숫자 배열로&#xa;변환 후 의미 거리&#xa;계산 (최대 10건)" vertex="1">
+          <mxGeometry height="90" width="115" x="145" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" parent="rag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="두 결과 합산 + 중복 제거" vertex="1">
+          <mxGeometry height="40" width="195" x="35" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" parent="rag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="오류 주석 있는 사례만 필터링&#xa;&#xa;※ 말뭉치의 각 문장엔&#xa;&#39;어디가 틀렸는지&#39; 주석이 있음" vertex="1">
+          <mxGeometry height="75" width="195" x="35" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" parent="rag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="기계어 → 자연어 변환&#xa;&#xa;예) 하고/JKB→와/JKB&#xa;→ &#39;하고&#39;를 &#39;와&#39;로 (조사 오류)" vertex="1">
+          <mxGeometry height="75" width="195" x="35" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="ec1" edge="1" parent="rag" source="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec2" edge="1" parent="rag" source="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec3" edge="1" parent="rag" source="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec4" edge="1" parent="rag" source="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="c5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=8;" value="&lt;b&gt;프롬프트 구성&lt;/b&gt;&#xa;&#xa;• AI 역할 지시 (TOPIK 1급 쓰기 튜터)&#xa;• 출력 형식 고정 (4단계)&#xa;• 학습자 문장 삽입&#xa;• 유사 오류 사례 삽입&#xa;• 과제 주제 삽입" vertex="1">
+          <mxGeometry height="150" width="240" x="350" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=11;" value="AI (Gemini 2.5)&#xa;&#xa;학습자 문장 오류 분석 및&#xa;교정 피드백 생성" vertex="1">
+          <mxGeometry height="80" width="240" x="350" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="n7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;피드백 출력&lt;/b&gt;&#xa;&#xa;🔎 고칠 곳&#xa;✅ 이렇게 써요&#xa;📌 예시&#xa;✍️ 다시 써요" vertex="1">
+          <mxGeometry height="115" width="240" x="350" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="n8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="사용자 화면 표시&#xa;(학습자가 피드백 확인)" vertex="1">
+          <mxGeometry height="60" width="200" x="80" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="n9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="대화 기록 저장&#xa;(데이터베이스)" vertex="1">
+          <mxGeometry height="60" width="190" x="430" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="n10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="관리자 대시보드&#xa;모든 사용자/대화 열람 가능" vertex="1">
+          <mxGeometry height="60" width="190" x="430" y="990" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontStyle=2;fontSize=10;" value="다시 문장을 쓰면 위 과정 반복" vertex="1">
+          <mxGeometry height="25" width="200" x="80" y="928" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="n1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="rag">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="n1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="n4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" label="유사 오류 사례 전달" parent="1" source="rag" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="n4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="n4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="n5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="n7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="n7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="n9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="n10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" label="이전 대화 이력 참조" parent="1" source="n9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="n5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="660" y="890" />
+              <mxPoint x="660" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
