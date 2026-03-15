@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>어드민 대시보드</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f0f2f5;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #222;
+}
+
+/* --- 어드민 로그인 오버레이 --- */
+#adminAuthOverlay {
+  position: fixed;
+  inset: 0;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.auth-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 32px;
+  width: 320px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.auth-box h2 { font-size: 18px; font-weight: 700; color: #333; }
+.auth-box p { font-size: 13px; color: #888; text-align: center; }
+
+.auth-box input[type="password"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+}
+.auth-box input[type="password"]:focus { border-color: #4a90d9; }
+
+.auth-box button {
+  width: 100%;
+  padding: 11px;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-box button:disabled { background: #a0c4e8; cursor: default; }
+
+.auth-error { font-size: 13px; color: #e05c5c; min-height: 18px; }
+
+/* --- 상단 헤더 --- */
+.admin-header {
+  background: #1e2535;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 50px;
+  flex-shrink: 0;
+}
+
+.admin-header h1 { font-size: 16px; font-weight: 700; }
+
+.admin-header button {
+  padding: 6px 14px;
+  background: #3a4256;
+  color: #ccc;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-header button:hover { background: #4a5570; color: #fff; }
+
+/* --- 메인 레이아웃 --- */
+.admin-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* --- 사용자 패널 --- */
+.users-panel {
+  width: 220px;
+  background: #fff;
+  border-right: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9ba8c0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
+.users-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.user-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.12s;
+}
+.user-item:hover { background: #f5f7fa; }
+.user-item.active { background: #eef4fc; border-left: 3px solid #4a90d9; }
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+.user-stats {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* --- 오른쪽 패널 --- */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- 대화 목록 --- */
+.conv-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.conv-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #555;
+}
+.back-btn:hover { background: #f0f0f0; }
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+
+.conv-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.conv-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.conv-card-header:hover { background: #fafafa; }
+
+.conv-card-title { font-size: 14px; font-weight: 600; color: #333; }
+.conv-card-meta { font-size: 12px; color: #888; }
+.conv-card-arrow { font-size: 12px; color: #aaa; transition: transform 0.2s; }
+.conv-card.open .conv-card-arrow { transform: rotate(90deg); }
+
+/* --- 턴 뷰어 --- */
+.turns-container {
+  display: none;
+  padding: 0 16px 14px;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+.conv-card.open .turns-container { display: block; }
+
+.turn {
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+}
+
+.turn-header {
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.turn.user .turn-header { background: #4a90d9; color: #fff; }
+.turn.model .turn-header { background: #2ecc71; color: #fff; }
+
+.turn-body { padding: 10px 12px; background: #fff; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+
+.rag-toggle {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 8px;
+  background: #f0f4ff;
+  border: 1px solid #c5d3f0;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #4a6aaf;
+  user-select: none;
+}
+.rag-toggle:hover { background: #dce8ff; }
+
+.rag-content {
+  display: none;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #f8f9fc;
+  border: 1px solid #dde3f0;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: #555;
+}
+
+.prompt-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  margin-left: 6px;
+  padding: 3px 8px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #777;
+  user-select: none;
+}
+.prompt-toggle:hover { background: #ebebeb; }
+
+.prompt-content {
+  display: none;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #fefefe;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  color: #888;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.empty-msg {
+  padding: 40px;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.loading { color: #aaa; font-size: 13px; padding: 10px 0; }
+</style>
+</head>
+<body>
+
+<!-- 어드민 로그인 오버레이 -->
+<div id="adminAuthOverlay">
+  <div class="auth-box">
+    <h2>🔐 어드민 대시보드</h2>
+    <p>어드민 암호를 입력하세요.</p>
+    <input type="password" id="adminPwInput" placeholder="어드민 암호" autocomplete="current-password">
+    <div class="auth-error" id="adminAuthError"></div>
+    <button id="adminAuthBtn">로그인</button>
+  </div>
+</div>
+
+<!-- 메인 레이아웃 -->
+<div class="admin-header">
+  <h1>어드민 대시보드</h1>
+  <button id="logoutBtn">로그아웃</button>
+</div>
+
+<div class="admin-body">
+  <!-- 사용자 패널 -->
+  <div class="users-panel">
+    <div class="panel-header">사용자 목록</div>
+    <div class="users-list" id="usersList"></div>
+  </div>
+
+  <!-- 오른쪽 패널 -->
+  <div class="right-panel">
+    <div class="conv-panel" id="convPanel">
+      <div class="empty-msg">왼쪽에서 사용자를 선택하세요.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- 어드민 인증 ---
+const adminAuthOverlay = document.getElementById("adminAuthOverlay");
+const adminPwInput = document.getElementById("adminPwInput");
+const adminAuthBtn = document.getElementById("adminAuthBtn");
+const adminAuthError = document.getElementById("adminAuthError");
+const logoutBtn = document.getElementById("logoutBtn");
+
+let adminToken = sessionStorage.getItem("admin_token") || "";
+
+function adminHeaders() {
+  return { "Content-Type": "application/json", "Authorization": "Bearer " + adminToken };
+}
+
+async function adminLogin() {
+  const pw = adminPwInput.value;
+  if (!pw) return;
+  adminAuthBtn.disabled = true;
+  adminAuthError.textContent = "";
+  try {
+    const res = await fetch("/api/admin/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      adminToken = data.token;
+      sessionStorage.setItem("admin_token", adminToken);
+      adminAuthOverlay.style.display = "none";
+      await loadUsers();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      adminAuthError.textContent = err.detail || "암호가 올바르지 않습니다.";
+      adminPwInput.value = "";
+      adminPwInput.focus();
+    }
+  } catch {
+    adminAuthError.textContent = "서버에 연결할 수 없습니다.";
+  }
+  adminAuthBtn.disabled = false;
+}
+
+adminAuthBtn.addEventListener("click", adminLogin);
+adminPwInput.addEventListener("keydown", (e) => { if (e.key === "Enter") adminLogin(); });
+
+logoutBtn.addEventListener("click", () => {
+  sessionStorage.removeItem("admin_token");
+  adminToken = "";
+  adminPwInput.value = "";
+  adminAuthError.textContent = "";
+  adminAuthOverlay.style.display = "flex";
+  document.getElementById("usersList").innerHTML = "";
+  document.getElementById("convPanel").innerHTML = '<div class="empty-msg">왼쪽에서 사용자를 선택하세요.</div>';
+  selectedUserId = null;
+  updateActiveUser(null);
+});
+
+if (adminToken) {
+  adminAuthOverlay.style.display = "none";
+  loadUsers();
+}
+
+// --- 사용자 목록 ---
+let selectedUserId = null;
+
+async function loadUsers() {
+  const res = await fetch("/api/admin/users", { headers: adminHeaders() });
+  if (res.status === 401) { showAdminAuth(); return; }
+  if (!res.ok) return;
+  const users = await res.json();
+  renderUsers(users);
+}
+
+function showAdminAuth() {
+  sessionStorage.removeItem("admin_token");
+  adminToken = "";
+  adminAuthOverlay.style.display = "flex";
+}
+
+function renderUsers(users) {
+  const list = document.getElementById("usersList");
+  list.innerHTML = "";
+  if (!users.length) {
+    list.innerHTML = '<div class="empty-msg" style="padding:20px;font-size:13px;">사용자 없음</div>';
+    return;
+  }
+  users.forEach(u => {
+    const item = document.createElement("div");
+    item.className = "user-item" + (u.id === selectedUserId ? " active" : "");
+    item.dataset.id = u.id;
+    item.dataset.name = u.username;
+
+    const lastActive = u.last_active
+      ? new Date(u.last_active * 1000).toLocaleDateString("ko-KR")
+      : "활동 없음";
+
+    item.innerHTML = `
+      <div class="user-name">${escHtml(u.username)}</div>
+      <div class="user-stats">대화 ${u.conversation_count}개 · 메시지 ${u.message_count}개<br>마지막: ${lastActive}</div>
+    `;
+    item.addEventListener("click", () => {
+      selectedUserId = u.id;
+      updateActiveUser(u.id);
+      loadConversations(u.id, u.username);
+    });
+    list.appendChild(item);
+  });
+}
+
+function updateActiveUser(uid) {
+  document.querySelectorAll(".user-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.id === uid);
+  });
+}
+
+// --- 대화 목록 ---
+async function loadConversations(userId, username) {
+  const panel = document.getElementById("convPanel");
+  panel.innerHTML = `
+    <div class="conv-panel-header">
+      <span class="panel-title">${escHtml(username)}의 대화 목록</span>
+    </div>
+    <div class="loading">불러오는 중...</div>
+  `;
+
+  const res = await fetch(`/api/admin/conversations?user_id=${encodeURIComponent(userId)}`, {
+    headers: adminHeaders()
+  });
+  if (res.status === 401) { showAdminAuth(); return; }
+  if (!res.ok) { panel.innerHTML += '<div class="empty-msg">불러오기 실패</div>'; return; }
+
+  const convs = await res.json();
+  renderConversations(convs, username);
+}
+
+function renderConversations(convs, username) {
+  const panel = document.getElementById("convPanel");
+  panel.innerHTML = `
+    <div class="conv-panel-header">
+      <span class="panel-title">${escHtml(username)}의 대화 목록 (${convs.length}건)</span>
+    </div>
+  `;
+
+  if (!convs.length) {
+    panel.innerHTML += '<div class="empty-msg">대화 기록이 없습니다.</div>';
+    return;
+  }
+
+  convs.forEach(c => {
+    const date = new Date(c.created_at * 1000).toLocaleString("ko-KR");
+    const card = document.createElement("div");
+    card.className = "conv-card";
+    card.dataset.cid = c.id;
+    card.innerHTML = `
+      <div class="conv-card-header">
+        <div>
+          <div class="conv-card-title">${escHtml(c.title)}</div>
+          <div class="conv-card-meta">${date}${c.task_topic ? " · " + escHtml(c.task_topic) : ""}</div>
+        </div>
+        <span class="conv-card-arrow">▶</span>
+      </div>
+      <div class="turns-container" id="turns-${c.id}">
+        <div class="loading">불러오는 중...</div>
+      </div>
+    `;
+
+    const header = card.querySelector(".conv-card-header");
+    header.addEventListener("click", () => toggleConv(card, c.id));
+    panel.appendChild(card);
+  });
+}
+
+const loadedTurns = new Set();
+
+async function toggleConv(card, cid) {
+  const isOpen = card.classList.contains("open");
+  if (isOpen) {
+    card.classList.remove("open");
+    return;
+  }
+  card.classList.add("open");
+
+  if (loadedTurns.has(cid)) return; // 이미 로드됨
+
+  const container = document.getElementById(`turns-${cid}`);
+  const res = await fetch(`/api/admin/conversations/${encodeURIComponent(cid)}/turns`, {
+    headers: adminHeaders()
+  });
+  if (res.status === 401) { showAdminAuth(); return; }
+
+  loadedTurns.add(cid);
+
+  if (!res.ok) {
+    container.innerHTML = '<div style="padding:10px;color:#e05c5c;font-size:13px;">불러오기 실패</div>';
+    return;
+  }
+
+  const turns = await res.json();
+  renderTurns(container, turns);
+}
+
+function renderTurns(container, turns) {
+  if (!turns.length) {
+    container.innerHTML = '<div style="padding:10px;color:#aaa;font-size:13px;">턴 없음</div>';
+    return;
+  }
+
+  container.innerHTML = "";
+  turns.forEach((t, idx) => {
+    const div = document.createElement("div");
+    div.className = "turn " + (t.role === "user" ? "user" : "model");
+
+    const roleLabel = t.role === "user" ? "학습자 입력" : "피드백 (모델)";
+    let bodyHtml = "";
+
+    if (t.role === "user") {
+      const learnerText = t.learner_text || "(원문 없음)";
+      const ragExamples = t.rag_examples || "";
+      const fullPrompt = t.text || "";
+
+      bodyHtml = `<div class="turn-body">${escHtml(learnerText)}`;
+
+      if (ragExamples) {
+        const ragId = `rag-${idx}`;
+        bodyHtml += `
+          <br><span class="rag-toggle" onclick="toggleEl('${ragId}', this, 'RAG 사례 펼치기', 'RAG 사례 접기')">RAG 사례 펼치기</span>
+          <div class="rag-content" id="${ragId}">${escHtml(ragExamples)}</div>
+        `;
+      }
+
+      if (fullPrompt) {
+        const promptId = `prompt-${idx}`;
+        bodyHtml += `
+          <span class="prompt-toggle" onclick="toggleEl('${promptId}', this, '전체 프롬프트 보기', '전체 프롬프트 접기')">전체 프롬프트 보기</span>
+          <div class="prompt-content" id="${promptId}">${escHtml(fullPrompt)}</div>
+        `;
+      }
+
+      bodyHtml += `</div>`;
+    } else {
+      bodyHtml = `<div class="turn-body">${escHtml(t.text)}</div>`;
+    }
+
+    div.innerHTML = `<div class="turn-header">${roleLabel}</div>${bodyHtml}`;
+    container.appendChild(div);
+  });
+}
+
+function toggleEl(id, btn, labelOpen, labelClose) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isHidden = el.style.display !== "block";
+  el.style.display = isHidden ? "block" : "none";
+  btn.textContent = isHidden ? labelClose : labelOpen;
+}
+
+function escHtml(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+</script>
+
+</body>
+</html>

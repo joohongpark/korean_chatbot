@@ -51,6 +51,7 @@ body {
   text-align: center;
 }
 
+.auth-box input[type="text"],
 .auth-box input[type="password"] {
   width: 100%;
   padding: 10px 14px;
@@ -60,6 +61,7 @@ body {
   outline: none;
 }
 
+.auth-box input[type="text"]:focus,
 .auth-box input[type="password"]:focus {
   border-color: #4a90d9;
 }
@@ -369,7 +371,8 @@ header {
 <div id="authOverlay">
   <div class="auth-box">
     <h2>🔒 한국어 쓰기 피드백</h2>
-    <p>접근하려면 암호를 입력하세요.</p>
+    <p>이름(영문자)과 암호를 입력하세요.</p>
+    <input type="text" id="usernameInput" placeholder="이름 (영문자, 예: Alice)" autocomplete="username" maxlength="50">
     <input type="password" id="passwordInput" placeholder="암호 입력" autocomplete="current-password">
     <div class="auth-error" id="authError"></div>
     <button id="authBtn">확인</button>
@@ -414,6 +417,7 @@ header {
 <script>
 // --- 인증 ---
 const authOverlay = document.getElementById("authOverlay");
+const usernameInput = document.getElementById("usernameInput");
 const passwordInput = document.getElementById("passwordInput");
 const authBtn = document.getElementById("authBtn");
 const authError = document.getElementById("authError");
@@ -421,20 +425,30 @@ const authError = document.getElementById("authError");
 let authToken = sessionStorage.getItem("auth_token") || "";
 
 async function tryLogin() {
+  const username = usernameInput.value.trim();
   const pw = passwordInput.value;
-  if (!pw) return;
+  if (!username || !pw) return;
+
+  // 클라이언트 사전 검증 (UX용)
+  if (!/^[a-zA-Z]{1,50}$/.test(username)) {
+    authError.textContent = "이름은 영문자 1~50자만 허용됩니다.";
+    usernameInput.focus();
+    return;
+  }
+
   authBtn.disabled = true;
   authError.textContent = "";
   try {
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: pw })
+      body: JSON.stringify({ username, password: pw })
     });
     if (res.ok) {
       const data = await res.json();
       authToken = data.token;
       sessionStorage.setItem("auth_token", authToken);
+      sessionStorage.setItem("auth_username", username);
       authOverlay.style.display = "none";
       await loadConversations();
     } else {
@@ -450,6 +464,9 @@ async function tryLogin() {
 }
 
 authBtn.addEventListener("click", tryLogin);
+usernameInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") passwordInput.focus();
+});
 passwordInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") tryLogin();
 });
@@ -522,14 +539,8 @@ async function switchConversation(cid) {
 function renderChatFromHistory(turns) {
   chatArea.innerHTML = "";
   turns.forEach(t => {
-    // turns에는 role: "user"/"model", text가 저장됨
-    // user turn의 text는 템플릿 적용된 전체 프롬프트이므로 learner_text 부분만 표시하기 어려움
-    // 대신 role 기준으로 user=user, model=bot으로 표시
     if (t.role === "user") {
-      // 원문 추출: "원문:\n" 이후 "\n\n" 이전 부분
-      const match = t.text.match(/^원문:\n([\s\S]*?)\n\n/);
-      const display = match ? match[1] : t.text;
-      addMsg(display, "user");
+      addMsg(t.text, "user");
     } else {
       addMsg(t.text, "bot");
     }
@@ -566,8 +577,10 @@ newChatBtn.addEventListener("click", () => {
 
 function showAuth() {
   sessionStorage.removeItem("auth_token");
+  sessionStorage.removeItem("auth_username");
   authToken = "";
   authError.textContent = "";
+  usernameInput.value = "";
   passwordInput.value = "";
   authOverlay.style.display = "flex";
 }
